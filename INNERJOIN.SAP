@@ -1,0 +1,35 @@
+*&---------------------------------------------------------------------*
+*& Report ZINNERJOIN
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZINNERJOIN.
+
+DATA  LV_ONO TYPE  ZDEONO_28.
+
+SELECT-OPTIONS S_ONO FOR LV_ONO .
+
+TYPES : BEGIN OF LTY_FINAL ,
+      ONO  TYPE ZDEONO_28 ,
+      ODATE TYPE ZDEODATE_28 ,
+      PM  TYPE    ZDEPM_28,
+      CURR  TYPE ZDECURR_28 ,
+      OIN TYPE ZDEOITMONO_28 ,
+      ICOST TYPE ZDEOICOST_28 ,
+       END OF LTY_FINAL .
+
+  DATA : LT_FINAL  TYPE TABLE OF LTY_FINAL .
+  DATA : LWA_FINAL TYPE LTY_FINAL.
+
+  SELECT  A~ONO  A~ODATE A~PM A~CURR B~OIN B~ICOST
+    FROM ZORDH_28 AS A  JOIN  ZORDI_28 AS B
+    ON A~ONO = B~ONO
+    INTO  TABLE LT_FINAL
+    WHERE A~ONO = S_ONO.
+
+    LOOP AT LT_FINAL INTO LWA_FINAL .
+      WRITE : / LWA_FINAL-ONO , LWA_FINAL-ODATE , LWA_FINAL-PM ,
+       LWA_FINAL-CURR , LWA_FINAL-ICOST , LWA_FINAL-OIN.
+
+
+    ENDLOOP.
