@@ -1,0 +1,367 @@
+   *&---------------------------------------------------------------------*
+*& Report ZBLOCKALV
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZBLOCKALV.
+
+DATA V_VBELN TYPE VBAK-VBELN.
+SELECT-OPTIONS SO_VBELN FOR V_VBELN.
+
+TYPES : BEGIN OF TY_VBAK,
+      VBELN  TYPE VBAK-VBELN,
+      ERDAT  TYPE VBAK-ERDAT ,
+      ERZET TYPE  VBAK-ERZET   ,
+     ERNAM TYPE VBAK-ERNAM ,
+   END OF TY_VBAK .
+
+   DATA : IT_VBAK TYPE TABLE OF TY_VBAK ,
+         WA_VBAK TYPE TY_VBAK .
+
+   TYPES : BEGIN OF TY_VBAP ,
+      VBELN TYPE VBAP-VBELN ,
+     POSNR TYPE  VBAP-POSNR ,
+     MATNR TYPE VBAP-MATNR ,
+     MATWA TYPE VBAP-MATWA ,
+     END OF TY_VBAP .
+
+      DATA : IT_VBAP TYPE TABLE OF TY_VBAP ,
+         WA_VBAP TYPE TY_VBAP .
+
+      DATA IT_FIELDCAT_VBAK TYPE SLIS_T_FIELDCAT_ALV .
+      DATA WA_FIELDCAT_VBAK TYPE SLIS_FIELDCAT_ALV.
+
+        DATA IT_FIELDCAT_VBAP TYPE SLIS_T_FIELDCAT_ALV .
+      DATA WA_FIELDCAT_VBAP TYPE SLIS_FIELDCAT_ALV.
+
+      DATA IT_LAYOUT_VBAK TYPE SLIS_LAYOUT_ALV.
+      DATA IT_EVENTS_VBAK TYPE SLIS_T_EVENT.
+
+       DATA IT_LAYOUT_VBAP TYPE SLIS_LAYOUT_ALV.
+      DATA IT_EVENTS_VBAP TYPE SLIS_T_EVENT.
+
+
+
+PERFORM GETSALESDATA.
+IF IT_VBAK IS NOT INITIAL.
+  PERFORM GETITEMSDATA.
+IF IT_VBAP IS NOT INITIAL .
+  PERFORM DISPLAYDATA.
+ ENDIF.
+ ENDIF.
+FORM getsalesdata .
+SELECT VBELN ERDAT ERZET  ERNAM
+  FROM VBAK
+  INTO TABLE IT_VBAK
+  WHERE VBELN IN SO_VBELN .
+
+
+ENDFORM.
+
+FORM getitemsdata .
+  SELECT VBELN POSNR MATNR MATWA
+    FROM VBAP
+    INTO TABLE IT_VBAP
+     FOR ALL ENTRIES IN IT_VBAK
+    WHERE VBELN = IT_VBAK-VBELN .
+
+ENDFORM.
+
+
+FORM displaydata .
+
+  WA_FIELDCAT_VBAK-COL_POS = '1'.
+   WA_FIELDCAT_VBAK-FIELDNAME = 'VBELN '.
+    WA_FIELDCAT_VBAK-TABNAME = 'IT_VBAK'.
+     WA_FIELDCAT_VBAK-SELTEXT_L = 'SALES DOCUMENT NUMBER  '.
+     APPEND  WA_FIELDCAT_VBAK  TO  IT_FIELDCAT_VBAK .
+     CLEAR WA_FIELDCAT_VBAK .
+
+      WA_FIELDCAT_VBAK-COL_POS = '2'.
+   WA_FIELDCAT_VBAK-FIELDNAME = 'ERDAT '.
+    WA_FIELDCAT_VBAK-TABNAME = 'IT_VBAK'.
+     WA_FIELDCAT_VBAK-SELTEXT_L = ' RECORD DATE '.
+     APPEND  WA_FIELDCAT_VBAK  TO  IT_FIELDCAT_VBAK .
+     CLEAR : WA_FIELDCAT_VBAK .
+
+      WA_FIELDCAT_VBAK-COL_POS = '3'.
+   WA_FIELDCAT_VBAK-FIELDNAME = 'ERZET '.
+    WA_FIELDCAT_VBAK-TABNAME = 'IT_VBAK'.
+     WA_FIELDCAT_VBAK-SELTEXT_L = 'ENTRY TIME '.
+     APPEND  WA_FIELDCAT_VBAK  TO  IT_FIELDCAT_VBAK .
+     CLEAR : WA_FIELDCAT_VBAK .
+
+   WA_FIELDCAT_VBAK-COL_POS = '4'.
+   WA_FIELDCAT_VBAK-FIELDNAME = 'ERNAM '.
+    WA_FIELDCAT_VBAK-TABNAME = 'IT_VBAK'.
+     WA_FIELDCAT_VBAK-SELTEXT_L = ' PERSON '.
+     APPEND  WA_FIELDCAT_VBAK  TO  IT_FIELDCAT_VBAK .
+     CLEAR : WA_FIELDCAT_VBAK .
+
+   WA_FIELDCAT_VBAP-COL_POS = '1'.
+   WA_FIELDCAT_VBAP-FIELDNAME = 'POSNR '.
+    WA_FIELDCAT_VBAP-TABNAME = 'IT_VBAP'.
+     WA_FIELDCAT_VBAP-SELTEXT_L = 'SALES DOCUMENT ITEM '.
+     APPEND  WA_FIELDCAT_VBAP  TO  IT_FIELDCAT_VBAP .
+     CLEAR : WA_FIELDCAT_VBAP .
+
+
+   WA_FIELDCAT_VBAP-COL_POS = '2'.
+   WA_FIELDCAT_VBAP-FIELDNAME = 'MATNR '.
+    WA_FIELDCAT_VBAP-TABNAME = 'IT_VBAP'.
+     WA_FIELDCAT_VBAP-SELTEXT_L = ' MATERIAL NUMBER '.
+     APPEND  WA_FIELDCAT_VBAP  TO  IT_FIELDCAT_VBAP .
+     CLEAR : WA_FIELDCAT_VBAP .
+
+
+
+
+     CALL FUNCTION 'REUSE_ALV_BLOCK_LIST_INIT'
+       EXPORTING
+         i_callback_program             =  SY-REPID.
+
+               .
+     CALL FUNCTION 'REUSE_ALV_BLOCK_LIST_APPEND'
+       EXPORTING
+         is_layout                        =  IT_LAYOUT_VBAK
+         it_fieldcat                      =  IT_FIELDCAT_VBAK
+         i_tabname                        = ' IT_VBAK '
+         it_events                        =  IT_EVENTS_VBAK
+*        IT_SORT                          =
+*        I_TEXT                           = ' '
+       TABLES
+         t_outtab                         =  IT_VBAK
+      EXCEPTIONS
+        PROGRAM_ERROR                    = 1
+        MAXIMUM_OF_APPENDS_REACHED       = 2
+        OTHERS                           = 3
+               .
+     IF sy-subrc <> 0.
+* Implement suitable error handling here
+     ENDIF.
+
+CALL FUNCTION 'REUSE_ALV_BLOCK_LIST_APPEND'
+  EXPORTING
+    is_layout                        =  IT_LAYOUT_VBAP
+    it_fieldcat                      =  IT_FIELDCAT_VBAP
+    i_tabname                        =  'IT_VBAP'
+    it_events                        =  IT_EVENTS_VBAP
+*   IT_SORT                          =
+*   I_TEXT                           = ' '
+  TABLES
+    t_outtab                         =  IT_VBAP
+ EXCEPTIONS
+   PROGRAM_ERROR                    = 1
+   MAXIMUM_OF_APPENDS_REACHED       = 2
+   OTHERS                           = 3
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+
+CALL FUNCTION 'REUSE_ALV_BLOCK_LIST_DISPLAY'
+* EXPORTING
+*   I_INTERFACE_CHECK             = ' '
+*   IS_PRINT                      =
+*   I_SCREEN_START_COLUMN         = 0
+*   I_SCREEN_START_LINE           = 0
+*   I_SCREEN_END_COLUMN           = 0
+*   I_SCREEN_END_LINE             = 0
+* IMPORTING
+*   E_EXIT_CAUSED_BY_CALLER       =
+*   ES_EXIT_CAUSED_BY_USER        =
+* EXCEPTIONS
+*   PROGRAM_ERROR                 = 1
+*   OTHERS                        = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+
+
+ENDFORM.   *&---------------------------------------------------------------------*
+*& Report ZBLOCKALV
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZBLOCKALV.
+
+DATA V_VBELN TYPE VBAK-VBELN.
+SELECT-OPTIONS SO_VBELN FOR V_VBELN.
+
+TYPES : BEGIN OF TY_VBAK,
+      VBELN  TYPE VBAK-VBELN,
+      ERDAT  TYPE VBAK-ERDAT ,
+      ERZET TYPE  VBAK-ERZET   ,
+     ERNAM TYPE VBAK-ERNAM ,
+   END OF TY_VBAK .
+
+   DATA : IT_VBAK TYPE TABLE OF TY_VBAK ,
+         WA_VBAK TYPE TY_VBAK .
+
+   TYPES : BEGIN OF TY_VBAP ,
+      VBELN TYPE VBAP-VBELN ,
+     POSNR TYPE  VBAP-POSNR ,
+     MATNR TYPE VBAP-MATNR ,
+     MATWA TYPE VBAP-MATWA ,
+     END OF TY_VBAP .
+
+      DATA : IT_VBAP TYPE TABLE OF TY_VBAP ,
+         WA_VBAP TYPE TY_VBAP .
+
+      DATA IT_FIELDCAT_VBAK TYPE SLIS_T_FIELDCAT_ALV .
+      DATA WA_FIELDCAT_VBAK TYPE SLIS_FIELDCAT_ALV.
+
+        DATA IT_FIELDCAT_VBAP TYPE SLIS_T_FIELDCAT_ALV .
+      DATA WA_FIELDCAT_VBAP TYPE SLIS_FIELDCAT_ALV.
+
+      DATA IT_LAYOUT_VBAK TYPE SLIS_LAYOUT_ALV.
+      DATA IT_EVENTS_VBAK TYPE SLIS_T_EVENT.
+
+       DATA IT_LAYOUT_VBAP TYPE SLIS_LAYOUT_ALV.
+      DATA IT_EVENTS_VBAP TYPE SLIS_T_EVENT.
+
+
+
+PERFORM GETSALESDATA.
+IF IT_VBAK IS NOT INITIAL.
+  PERFORM GETITEMSDATA.
+IF IT_VBAP IS NOT INITIAL .
+  PERFORM DISPLAYDATA.
+ ENDIF.
+ ENDIF.
+FORM getsalesdata .
+SELECT VBELN ERDAT ERZET  ERNAM
+  FROM VBAK
+  INTO TABLE IT_VBAK
+  WHERE VBELN IN SO_VBELN .
+
+
+ENDFORM.
+
+FORM getitemsdata .
+  SELECT VBELN POSNR MATNR MATWA
+    FROM VBAP
+    INTO TABLE IT_VBAP
+     FOR ALL ENTRIES IN IT_VBAK
+    WHERE VBELN = IT_VBAK-VBELN .
+
+ENDFORM.
+
+
+FORM displaydata .
+
+  WA_FIELDCAT_VBAK-COL_POS = '1'.
+   WA_FIELDCAT_VBAK-FIELDNAME = 'VBELN '.
+    WA_FIELDCAT_VBAK-TABNAME = 'IT_VBAK'.
+     WA_FIELDCAT_VBAK-SELTEXT_L = 'SALES DOCUMENT NUMBER  '.
+     APPEND  WA_FIELDCAT_VBAK  TO  IT_FIELDCAT_VBAK .
+     CLEAR WA_FIELDCAT_VBAK .
+
+      WA_FIELDCAT_VBAK-COL_POS = '2'.
+   WA_FIELDCAT_VBAK-FIELDNAME = 'ERDAT '.
+    WA_FIELDCAT_VBAK-TABNAME = 'IT_VBAK'.
+     WA_FIELDCAT_VBAK-SELTEXT_L = ' RECORD DATE '.
+     APPEND  WA_FIELDCAT_VBAK  TO  IT_FIELDCAT_VBAK .
+     CLEAR : WA_FIELDCAT_VBAK .
+
+      WA_FIELDCAT_VBAK-COL_POS = '3'.
+   WA_FIELDCAT_VBAK-FIELDNAME = 'ERZET '.
+    WA_FIELDCAT_VBAK-TABNAME = 'IT_VBAK'.
+     WA_FIELDCAT_VBAK-SELTEXT_L = 'ENTRY TIME '.
+     APPEND  WA_FIELDCAT_VBAK  TO  IT_FIELDCAT_VBAK .
+     CLEAR : WA_FIELDCAT_VBAK .
+
+   WA_FIELDCAT_VBAK-COL_POS = '4'.
+   WA_FIELDCAT_VBAK-FIELDNAME = 'ERNAM '.
+    WA_FIELDCAT_VBAK-TABNAME = 'IT_VBAK'.
+     WA_FIELDCAT_VBAK-SELTEXT_L = ' PERSON '.
+     APPEND  WA_FIELDCAT_VBAK  TO  IT_FIELDCAT_VBAK .
+     CLEAR : WA_FIELDCAT_VBAK .
+
+   WA_FIELDCAT_VBAP-COL_POS = '1'.
+   WA_FIELDCAT_VBAP-FIELDNAME = 'POSNR '.
+    WA_FIELDCAT_VBAP-TABNAME = 'IT_VBAP'.
+     WA_FIELDCAT_VBAP-SELTEXT_L = 'SALES DOCUMENT ITEM '.
+     APPEND  WA_FIELDCAT_VBAP  TO  IT_FIELDCAT_VBAP .
+     CLEAR : WA_FIELDCAT_VBAP .
+
+
+   WA_FIELDCAT_VBAP-COL_POS = '2'.
+   WA_FIELDCAT_VBAP-FIELDNAME = 'MATNR '.
+    WA_FIELDCAT_VBAP-TABNAME = 'IT_VBAP'.
+     WA_FIELDCAT_VBAP-SELTEXT_L = ' MATERIAL NUMBER '.
+     APPEND  WA_FIELDCAT_VBAP  TO  IT_FIELDCAT_VBAP .
+     CLEAR : WA_FIELDCAT_VBAP .
+
+
+
+
+     CALL FUNCTION 'REUSE_ALV_BLOCK_LIST_INIT'
+       EXPORTING
+         i_callback_program             =  SY-REPID.
+
+               .
+     CALL FUNCTION 'REUSE_ALV_BLOCK_LIST_APPEND'
+       EXPORTING
+         is_layout                        =  IT_LAYOUT_VBAK
+         it_fieldcat                      =  IT_FIELDCAT_VBAK
+         i_tabname                        = ' IT_VBAK '
+         it_events                        =  IT_EVENTS_VBAK
+*        IT_SORT                          =
+*        I_TEXT                           = ' '
+       TABLES
+         t_outtab                         =  IT_VBAK
+      EXCEPTIONS
+        PROGRAM_ERROR                    = 1
+        MAXIMUM_OF_APPENDS_REACHED       = 2
+        OTHERS                           = 3
+               .
+     IF sy-subrc <> 0.
+* Implement suitable error handling here
+     ENDIF.
+
+CALL FUNCTION 'REUSE_ALV_BLOCK_LIST_APPEND'
+  EXPORTING
+    is_layout                        =  IT_LAYOUT_VBAP
+    it_fieldcat                      =  IT_FIELDCAT_VBAP
+    i_tabname                        =  'IT_VBAP'
+    it_events                        =  IT_EVENTS_VBAP
+*   IT_SORT                          =
+*   I_TEXT                           = ' '
+  TABLES
+    t_outtab                         =  IT_VBAP
+ EXCEPTIONS
+   PROGRAM_ERROR                    = 1
+   MAXIMUM_OF_APPENDS_REACHED       = 2
+   OTHERS                           = 3
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+
+CALL FUNCTION 'REUSE_ALV_BLOCK_LIST_DISPLAY'
+* EXPORTING
+*   I_INTERFACE_CHECK             = ' '
+*   IS_PRINT                      =
+*   I_SCREEN_START_COLUMN         = 0
+*   I_SCREEN_START_LINE           = 0
+*   I_SCREEN_END_COLUMN           = 0
+*   I_SCREEN_END_LINE             = 0
+* IMPORTING
+*   E_EXIT_CAUSED_BY_CALLER       =
+*   ES_EXIT_CAUSED_BY_USER        =
+* EXCEPTIONS
+*   PROGRAM_ERROR                 = 1
+*   OTHERS                        = 2
+          .
+IF sy-subrc <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+
+
+ENDFORM.
